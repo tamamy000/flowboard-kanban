@@ -6,18 +6,35 @@ import { CSS } from "@dnd-kit/utilities";
 type DraggableCardProps = {
   id: string;
   title: string;
+  priority?: string;
+  due_date?: string;
   columnId: string;
   onClick: () => void;
 };
 
+const priorityStyles: Record<string, string> = {
+  low: "bg-green-100 text-green-700",
+  medium: "bg-amber-100 text-amber-700",
+  high: "bg-red-100 text-red-600",
+};
+
+function formatDate(dateStr: string) {
+  const d = new Date(dateStr + "T00:00:00");
+  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
 export default function DraggableCard({
   id,
   title,
+  priority,
+  due_date,
   columnId,
   onClick,
 }: DraggableCardProps) {
   const { attributes, listeners, setNodeRef, transform, isDragging } =
     useDraggable({ id, data: { columnId } });
+
+  const hasMeta = priority || due_date;
 
   return (
     <div
@@ -37,6 +54,24 @@ export default function DraggableCard({
       <p className="text-text text-sm leading-5 tracking-[-0.15px] pointer-events-none">
         {title}
       </p>
+      {hasMeta && (
+        <div className="flex items-center gap-2 mt-2 pointer-events-none flex-wrap">
+          {priority && (
+            <span
+              className={`text-xs font-medium leading-4 px-2 py-0.5 rounded-full capitalize ${
+                priorityStyles[priority] ?? "bg-gray-100 text-gray-600"
+              }`}
+            >
+              {priority}
+            </span>
+          )}
+          {due_date && (
+            <span className="text-xs text-muted leading-4">
+              {formatDate(due_date)}
+            </span>
+          )}
+        </div>
+      )}
     </div>
   );
 }

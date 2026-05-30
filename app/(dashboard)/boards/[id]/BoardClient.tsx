@@ -12,6 +12,7 @@ import {
 } from "@dnd-kit/core";
 import StatusColumn from "@/components/StatusColumn";
 import CreateCardModal from "@/components/CreateCardModal";
+import { useToast } from "@/components/Toast";
 import { upsertCard, deleteCard, moveCard } from "./actions";
 
 type Card = {
@@ -46,6 +47,7 @@ export default function BoardClient({
   const [columns, setColumns] = useState(serverColumns);
   const [modal, setModal] = useState<ModalState>(null);
   const [activeCard, setActiveCard] = useState<Card | null>(null);
+  const { showToast } = useToast();
 
   // Sync when server re-renders after revalidation
   useEffect(() => {
@@ -97,18 +99,28 @@ export default function BoardClient({
       });
     });
 
-    // Persist to Supabase in the background
-    moveCard(boardId, cardId, targetColumnId).catch(() => {
-      // Revert on failure
-      setColumns(serverColumns);
-    });
+    const targetName =
+      columns.find((c) => c.id === targetColumnId)?.title ?? "column";
+
+    moveCard(boardId, cardId, targetColumnId)
+      .then(() => showToast(`Moved to ${targetName}`))
+      .catch(() => {
+        setColumns(serverColumns);
+        showToast("Failed to move card — reverted", "error");
+      });
   }
 
   function openAdd(columnId: string) {
     setModal({ columnId });
   }
 
-  function openEdit(card: { id: string; title: string; columnId: string }) {
+  function openEdit(card: {
+    id: string;
+    title: string;
+    columnId: string;
+    priority?: string;
+    due_date?: string;
+  }) {
     const col = columns.find((c) => c.id === card.columnId);
     const fullCard = col?.cards.find((c) => c.id === card.id);
     setModal({ columnId: card.columnId, card: fullCard });
@@ -123,10 +135,12 @@ export default function BoardClient({
     due_date?: string;
   }) {
     await upsertCard(boardId, data);
+    showToast(data.id ? "Card saved" : "Card created");
   }
 
   async function handleDelete(cardId: string) {
     await deleteCard(boardId, cardId);
+    showToast("Card deleted");
   }
 
   return (
@@ -142,7 +156,12 @@ export default function BoardClient({
               key={col.id}
               id={col.id}
               title={col.title}
-              cards={col.cards.map((c) => ({ id: c.id, title: c.title }))}
+              cards={col.cards.map((c) => ({
+                id: c.id,
+                title: c.title,
+                priority: c.priority,
+                due_date: c.due_date,
+              }))}
               onAddCard={openAdd}
               onEditCard={openEdit}
             />

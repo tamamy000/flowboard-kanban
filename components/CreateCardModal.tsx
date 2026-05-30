@@ -28,6 +28,7 @@ export default function CreateCardModal({
   const [description, setDescription] = useState(card?.description ?? "");
   const [priority, setPriority] = useState(card?.priority ?? "");
   const [dueDate, setDueDate] = useState(card?.due_date ?? "");
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   function handleSubmit(e: React.FormEvent) {
@@ -80,25 +81,35 @@ export default function CreateCardModal({
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           {/* Name */}
           <div className="flex flex-col gap-2">
-            <label className="text-text text-sm font-medium leading-5 tracking-[-0.15px]">
+            <label
+              htmlFor="card-title"
+              className="text-text text-sm font-medium leading-5 tracking-[-0.15px]"
+            >
               Name
             </label>
             <input
+              id="card-title"
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Enter card name..."
               autoFocus
+              required
+              aria-required="true"
               className="border border-[rgba(0,0,0,0.1)] rounded-[10px] px-3 py-[10px] text-base text-text placeholder:text-muted outline-none focus:border-primary focus:bg-input-focus transition-colors"
             />
           </div>
 
           {/* Description */}
           <div className="flex flex-col gap-2">
-            <label className="text-muted text-xs font-medium uppercase tracking-[0.3px] leading-4">
+            <label
+              htmlFor="card-description"
+              className="text-muted text-xs font-medium uppercase tracking-[0.3px] leading-4"
+            >
               Description
             </label>
             <textarea
+              id="card-description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Add a description..."
@@ -110,10 +121,14 @@ export default function CreateCardModal({
           {/* Priority + Due Date */}
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-2">
-              <label className="text-muted text-xs font-medium uppercase tracking-[0.3px] leading-4">
+              <label
+                htmlFor="card-priority"
+                className="text-muted text-xs font-medium uppercase tracking-[0.3px] leading-4"
+              >
                 Priority
               </label>
               <select
+                id="card-priority"
                 value={priority}
                 onChange={(e) => setPriority(e.target.value)}
                 className="border border-[rgba(0,0,0,0.1)] rounded-[10px] px-3 py-[9px] text-base text-text outline-none focus:border-primary transition-colors bg-white"
@@ -125,10 +140,14 @@ export default function CreateCardModal({
               </select>
             </div>
             <div className="flex flex-col gap-2">
-              <label className="text-muted text-xs font-medium uppercase tracking-[0.3px] leading-4">
+              <label
+                htmlFor="card-due-date"
+                className="text-muted text-xs font-medium uppercase tracking-[0.3px] leading-4"
+              >
                 Due Date
               </label>
               <input
+                id="card-due-date"
                 type="date"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
@@ -140,14 +159,36 @@ export default function CreateCardModal({
           {/* Footer */}
           <div className="border-t border-[rgba(0,0,0,0.1)] flex items-center justify-between py-4">
             {card?.id && onDelete ? (
-              <button
-                type="button"
-                onClick={handleDelete}
-                disabled={isPending}
-                className="text-delete text-sm font-medium leading-5 tracking-[-0.15px] hover:opacity-75 transition-opacity"
-              >
-                Delete card
-              </button>
+              confirmingDelete ? (
+                <div className="flex items-center gap-3">
+                  <span className="text-text text-sm leading-5">
+                    Delete this card?
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleDelete}
+                    disabled={isPending}
+                    className="text-delete text-sm font-medium leading-5 hover:opacity-75 transition-opacity disabled:opacity-50"
+                  >
+                    {isPending ? "Deleting…" : "Confirm"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setConfirmingDelete(false)}
+                    className="text-muted text-sm font-medium leading-5 hover:text-text transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setConfirmingDelete(true)}
+                  className="text-delete text-sm font-medium leading-5 tracking-[-0.15px] hover:opacity-75 transition-opacity"
+                >
+                  Delete card
+                </button>
+              )
             ) : (
               <div />
             )}
@@ -162,8 +203,9 @@ export default function CreateCardModal({
               <button
                 type="submit"
                 disabled={isPending || !title.trim()}
-                className="bg-primary text-white text-base font-medium leading-6 tracking-[-0.31px] rounded-[10px] px-5 h-11 hover:bg-primary-hover transition-colors disabled:opacity-60"
+                className="bg-primary text-white text-base font-medium leading-6 tracking-[-0.31px] rounded-[10px] px-5 h-11 hover:bg-primary-hover transition-colors disabled:opacity-60 flex items-center gap-2"
               >
+                {isPending && <Spinner />}
                 {isPending ? "Saving…" : "Save"}
               </button>
             </div>
@@ -171,6 +213,34 @@ export default function CreateCardModal({
         </form>
       </div>
     </div>
+  );
+}
+
+function Spinner() {
+  return (
+    <svg
+      className="animate-spin"
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      fill="none"
+      aria-hidden="true"
+    >
+      <circle
+        cx="8"
+        cy="8"
+        r="6"
+        stroke="currentColor"
+        strokeOpacity="0.3"
+        strokeWidth="2"
+      />
+      <path
+        d="M8 2a6 6 0 0 1 6 6"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+    </svg>
   );
 }
 

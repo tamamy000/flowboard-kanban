@@ -3,7 +3,12 @@
 import { useDroppable } from "@dnd-kit/core";
 import DraggableCard from "./DraggableCard";
 
-type Card = { id: string; title: string };
+type Card = {
+  id: string;
+  title: string;
+  priority?: string;
+  due_date?: string;
+};
 
 type StatusColumnProps = {
   id: string;
@@ -54,6 +59,8 @@ export default function StatusColumn({
               key={card.id}
               id={card.id}
               title={card.title}
+              priority={card.priority}
+              due_date={card.due_date}
               columnId={id}
               onClick={() => onEditCard({ ...card, columnId: id })}
             />

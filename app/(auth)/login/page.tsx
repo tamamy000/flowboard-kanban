@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useId } from "react";
 import { useRouter } from "next/navigation";
 import Logo from "@/components/Logo";
 import { createClient } from "@/lib/supabase/client";
@@ -16,6 +16,8 @@ export default function LoginPage() {
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
   const supabase = createClient();
+  const emailId = useId();
+  const passwordId = useId();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -51,6 +53,34 @@ export default function LoginPage() {
         }
       }
     });
+  }
+
+  function Spinner() {
+    return (
+      <svg
+        className="animate-spin"
+        width="16"
+        height="16"
+        viewBox="0 0 16 16"
+        fill="none"
+        aria-hidden="true"
+      >
+        <circle
+          cx="8"
+          cy="8"
+          r="6"
+          stroke="currentColor"
+          strokeOpacity="0.3"
+          strokeWidth="2"
+        />
+        <path
+          d="M8 2a6 6 0 0 1 6 6"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+        />
+      </svg>
+    );
   }
 
   const tabs: { key: Tab; label: string }[] = [
@@ -99,43 +129,64 @@ export default function LoginPage() {
           {/* Form */}
           <form onSubmit={handleSubmit} className="flex flex-col gap-4 pb-8">
             <div className="flex flex-col gap-2">
-              <label className="text-text text-sm font-medium leading-5 tracking-[-0.15px]">
+              <label
+                htmlFor={emailId}
+                className="text-text text-sm font-medium leading-5 tracking-[-0.15px]"
+              >
                 Email Address
               </label>
               <input
+                id={emailId}
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
                 required
+                aria-required="true"
+                aria-invalid={!!error}
                 className="border border-[rgba(0,0,0,0.1)] rounded-[10px] px-3 py-[10px] text-base text-text placeholder:text-muted outline-none focus:border-primary focus:bg-input-focus transition-colors"
               />
             </div>
 
             {tab !== "magic" && (
               <div className="flex flex-col gap-2">
-                <label className="text-text text-sm font-medium leading-5 tracking-[-0.15px]">
+                <label
+                  htmlFor={passwordId}
+                  className="text-text text-sm font-medium leading-5 tracking-[-0.15px]"
+                >
                   Password
                 </label>
                 <input
+                  id={passwordId}
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   required
+                  aria-required="true"
+                  aria-invalid={!!error}
                   className="border border-[rgba(0,0,0,0.1)] rounded-[10px] px-3 py-[10px] text-base text-text placeholder:text-muted outline-none focus:border-primary focus:bg-input-focus transition-colors"
                 />
               </div>
             )}
 
-            {error && <p className="text-delete text-sm leading-5">{error}</p>}
-            {message && <p className="text-primary text-sm leading-5">{message}</p>}
+            {error && (
+              <p role="alert" className="text-delete text-sm leading-5">
+                {error}
+              </p>
+            )}
+            {message && (
+              <p role="status" className="text-primary text-sm leading-5">
+                {message}
+              </p>
+            )}
 
             <button
               type="submit"
               disabled={isPending}
-              className="bg-primary text-white text-base font-medium leading-6 tracking-[-0.31px] rounded-[10px] py-[10px] w-full hover:bg-primary-hover transition-colors disabled:opacity-60"
+              className="bg-primary text-white text-base font-medium leading-6 tracking-[-0.31px] rounded-[10px] py-[10px] w-full hover:bg-primary-hover transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
             >
+              {isPending && <Spinner />}
               {isPending
                 ? "Please wait…"
                 : tab === "signin"

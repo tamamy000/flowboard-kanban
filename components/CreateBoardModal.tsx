@@ -39,14 +39,20 @@ export default function CreateBoardModal({
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-6">
           <div className="flex flex-col gap-2">
-            <label className="text-text text-sm font-medium leading-5 tracking-[-0.15px]">
+            <label
+              htmlFor="board-name"
+              className="text-text text-sm font-medium leading-5 tracking-[-0.15px]"
+            >
               Board name
             </label>
             <input
+              id="board-name"
               ref={inputRef}
               type="text"
               placeholder="e.g. Product Roadmap"
               autoFocus
+              required
+              aria-required="true"
               className="border border-[rgba(0,0,0,0.1)] rounded-[10px] px-3 py-[10px] text-base text-text placeholder:text-muted outline-none focus:border-primary focus:bg-input-focus transition-colors"
             />
           </div>
@@ -62,13 +68,42 @@ export default function CreateBoardModal({
             <button
               type="submit"
               disabled={isPending}
-              className="bg-primary text-white text-base font-medium leading-6 tracking-[-0.31px] rounded-[10px] px-5 h-11 hover:bg-primary-hover transition-colors disabled:opacity-60"
+              className="bg-primary text-white text-base font-medium leading-6 tracking-[-0.31px] rounded-[10px] px-5 h-11 hover:bg-primary-hover transition-colors disabled:opacity-60 flex items-center gap-2"
             >
+              {isPending && <Spinner />}
               {isPending ? "Creating…" : "Create"}
             </button>
           </div>
         </form>
       </div>
     </div>
+  );
+}
+
+function Spinner() {
+  return (
+    <svg
+      className="animate-spin"
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      fill="none"
+      aria-hidden="true"
+    >
+      <circle
+        cx="8"
+        cy="8"
+        r="6"
+        stroke="currentColor"
+        strokeOpacity="0.3"
+        strokeWidth="2"
+      />
+      <path
+        d="M8 2a6 6 0 0 1 6 6"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+    </svg>
   );
 }

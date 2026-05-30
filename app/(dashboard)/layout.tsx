@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Navbar from "@/components/Navbar";
+import { ToastProvider } from "@/components/Toast";
 
 export default async function DashboardLayout({
   children,
@@ -17,9 +18,11 @@ export default async function DashboardLayout({
   const initial = (user.email?.[0] ?? "U").toUpperCase();
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Navbar userInitial={initial} />
-      {children}
-    </div>
+    <ToastProvider>
+      <div className="min-h-screen flex flex-col">
+        <Navbar userInitial={initial} />
+        {children}
+      </div>
+    </ToastProvider>
   );
 }
