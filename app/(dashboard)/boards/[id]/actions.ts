@@ -50,3 +50,24 @@ export async function deleteCard(boardId: string, cardId: string) {
   if (error) throw error;
   revalidatePath(`/boards/${boardId}`);
 }
+
+export async function moveCard(
+  boardId: string,
+  cardId: string,
+  targetColumnId: string
+) {
+  const supabase = await createClient();
+
+  const { count } = await supabase
+    .from("cards")
+    .select("*", { count: "exact", head: true })
+    .eq("column_id", targetColumnId);
+
+  const { error } = await supabase
+    .from("cards")
+    .update({ column_id: targetColumnId, position: count ?? 0 })
+    .eq("id", cardId);
+
+  if (error) throw error;
+  revalidatePath(`/boards/${boardId}`);
+}

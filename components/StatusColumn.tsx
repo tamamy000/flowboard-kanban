@@ -1,5 +1,8 @@
 "use client";
 
+import { useDroppable } from "@dnd-kit/core";
+import DraggableCard from "./DraggableCard";
+
 type Card = { id: string; title: string };
 
 type StatusColumnProps = {
@@ -17,6 +20,8 @@ export default function StatusColumn({
   onAddCard,
   onEditCard,
 }: StatusColumnProps) {
+  const { isOver, setNodeRef } = useDroppable({ id });
+
   return (
     <div className="bg-column-bg rounded-[10px] p-4 flex flex-col gap-4 w-[319px] shrink-0">
       {/* Header */}
@@ -29,9 +34,14 @@ export default function StatusColumn({
         </span>
       </div>
 
-      {/* Cards area */}
-      <div className="flex-1 flex flex-col gap-2 min-h-[120px]">
-        {cards.length === 0 ? (
+      {/* Droppable cards area */}
+      <div
+        ref={setNodeRef}
+        className={`flex-1 flex flex-col gap-2 min-h-[120px] rounded-[10px] transition-colors ${
+          isOver ? "bg-input-focus" : ""
+        }`}
+      >
+        {cards.length === 0 && !isOver ? (
           <div className="flex-1 border-2 border-dashed border-[rgba(0,0,0,0.1)] rounded-[10px] flex flex-col items-center justify-center gap-2 p-8">
             <UploadIcon />
             <p className="text-muted text-sm text-center leading-5 tracking-[-0.15px]">
@@ -40,15 +50,13 @@ export default function StatusColumn({
           </div>
         ) : (
           cards.map((card) => (
-            <div
+            <DraggableCard
               key={card.id}
-              className="bg-white border border-[rgba(0,0,0,0.1)] rounded-[10px] px-3 pt-3 pb-px cursor-pointer hover:shadow-sm transition-shadow"
+              id={card.id}
+              title={card.title}
+              columnId={id}
               onClick={() => onEditCard({ ...card, columnId: id })}
-            >
-              <p className="text-text text-sm leading-5 tracking-[-0.15px]">
-                {card.title}
-              </p>
-            </div>
+            />
           ))
         )}
       </div>
