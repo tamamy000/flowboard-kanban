@@ -5,12 +5,13 @@ import { useRouter } from "next/navigation";
 import Logo from "@/components/Logo";
 import { createClient } from "@/lib/supabase/client";
 
-type Tab = "signin" | "signup";
+type Tab = "signin" | "magic" | "signup";
 
 export default function LoginPage() {
   const [tab, setTab] = useState<Tab>("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
@@ -19,6 +20,7 @@ export default function LoginPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    setMessage("");
 
     startTransition(async () => {
       if (tab === "signin") {
@@ -31,6 +33,13 @@ export default function LoginPage() {
         } else {
           router.push("/boards");
           router.refresh();
+        }
+      } else if (tab === "magic") {
+        const { error } = await supabase.auth.signInWithOtp({ email });
+        if (error) {
+          setError(error.message);
+        } else {
+          setMessage("Check your email for the magic link!");
         }
       } else {
         const { error } = await supabase.auth.signUp({ email, password });
@@ -46,6 +55,7 @@ export default function LoginPage() {
 
   const tabs: { key: Tab; label: string }[] = [
     { key: "signin", label: "Sign in" },
+    { key: "magic", label: "Magic link" },
     { key: "signup", label: "Sign up" },
   ];
 
@@ -73,6 +83,7 @@ export default function LoginPage() {
                 onClick={() => {
                   setTab(key);
                   setError("");
+                  setMessage("");
                 }}
                 className={`flex-1 py-2 px-6 rounded-[8px] text-sm font-medium leading-5 tracking-[-0.15px] transition-all ${
                   tab === key
@@ -101,23 +112,24 @@ export default function LoginPage() {
               />
             </div>
 
-            <div className="flex flex-col gap-2">
-              <label className="text-text text-sm font-medium leading-5 tracking-[-0.15px]">
-                Password
-              </label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                required
-                className="border border-[rgba(0,0,0,0.1)] rounded-[10px] px-3 py-[10px] text-base text-text placeholder:text-muted outline-none focus:border-primary focus:bg-input-focus transition-colors"
-              />
-            </div>
-
-            {error && (
-              <p className="text-delete text-sm leading-5">{error}</p>
+            {tab !== "magic" && (
+              <div className="flex flex-col gap-2">
+                <label className="text-text text-sm font-medium leading-5 tracking-[-0.15px]">
+                  Password
+                </label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  className="border border-[rgba(0,0,0,0.1)] rounded-[10px] px-3 py-[10px] text-base text-text placeholder:text-muted outline-none focus:border-primary focus:bg-input-focus transition-colors"
+                />
+              </div>
             )}
+
+            {error && <p className="text-delete text-sm leading-5">{error}</p>}
+            {message && <p className="text-primary text-sm leading-5">{message}</p>}
 
             <button
               type="submit"
@@ -128,6 +140,8 @@ export default function LoginPage() {
                 ? "Please wait…"
                 : tab === "signin"
                 ? "Sign in"
+                : tab === "magic"
+                ? "Send magic link"
                 : "Create account"}
             </button>
           </form>
