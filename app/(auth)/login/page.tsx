@@ -1,11 +1,17 @@
 "use client";
 
-import { useState, useTransition, useId } from "react";
+import { useState, useTransition, useId, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Logo from "@/components/Logo";
 import { createClient } from "@/lib/supabase/client";
 
 type Tab = "signin" | "magic" | "signup";
+
+const TABS: { key: Tab; label: string }[] = [
+  { key: "signin", label: "Sign in" },
+  { key: "magic", label: "Magic link" },
+  { key: "signup", label: "Sign up" },
+];
 
 export default function LoginPage() {
   const [tab, setTab] = useState<Tab>("signin");
@@ -16,8 +22,14 @@ export default function LoginPage() {
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
   const supabase = createClient();
+
   const emailId = useId();
   const passwordId = useId();
+  const errorId = useId();
+  const messageId = useId();
+
+  // Refs for tab buttons so arrow key focus can be set programmatically
+  const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -55,44 +67,46 @@ export default function LoginPage() {
     });
   }
 
-  function Spinner() {
-    return (
-      <svg
-        className="animate-spin"
-        width="16"
-        height="16"
-        viewBox="0 0 16 16"
-        fill="none"
-        aria-hidden="true"
-      >
-        <circle
-          cx="8"
-          cy="8"
-          r="6"
-          stroke="currentColor"
-          strokeOpacity="0.3"
-          strokeWidth="2"
-        />
-        <path
-          d="M8 2a6 6 0 0 1 6 6"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-        />
-      </svg>
-    );
+  // WCAG 2.1.1: ARIA tab list requires arrow keys to navigate between tabs.
+  // Tab key moves focus INTO the panel (not between tabs).
+  function handleTabKeyDown(
+    e: React.KeyboardEvent<HTMLButtonElement>,
+    index: number
+  ) {
+    let nextIndex: number | null = null;
+
+    if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+      nextIndex = (index + 1) % TABS.length;
+    } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+      nextIndex = (index - 1 + TABS.length) % TABS.length;
+    } else if (e.key === "Home") {
+      nextIndex = 0;
+    } else if (e.key === "End") {
+      nextIndex = TABS.length - 1;
+    }
+
+    if (nextIndex !== null) {
+      e.preventDefault();
+      const nextTab = TABS[nextIndex];
+      setTab(nextTab.key);
+      setError("");
+      setMessage("");
+      tabRefs.current[nextIndex]?.focus();
+    }
   }
 
-  const tabs: { key: Tab; label: string }[] = [
-    { key: "signin", label: "Sign in" },
-    { key: "magic", label: "Magic link" },
-    { key: "signup", label: "Sign up" },
-  ];
+  function selectTab(key: Tab) {
+    setTab(key);
+    setError("");
+    setMessage("");
+  }
+
+  const activeTabIndex = TABS.findIndex((t) => t.key === tab);
 
   return (
     <div className="min-h-screen bg-app-bg flex items-center justify-center">
       <div className="flex flex-col items-center gap-8">
-        {/* Branding */}
+        {/* Branding — logo is decorative; "FlowBoard" text is the real label */}
         <div className="flex flex-col items-center gap-3">
           <Logo size={48} />
           <p className="text-text text-2xl font-semibold leading-8 tracking-[0.07px]">
@@ -105,17 +119,28 @@ export default function LoginPage() {
 
         {/* Card */}
         <div className="bg-white rounded-[16px] shadow-[0_10px_7.5px_rgba(0,0,0,0.1),0_4px_3px_rgba(0,0,0,0.1)] w-[448px] pt-8 px-8">
-          {/* Tab toggle */}
-          <div className="bg-column-bg rounded-[10px] p-1 flex mb-6">
-            {tabs.map(({ key, label }) => (
+          {/* WCAG 4.1.2: role="tablist" + role="tab" + aria-selected for proper tab semantics.
+              Only the active tab is in the natural tab order (tabIndex 0); others use -1.
+              Arrow keys navigate between tabs per the ARIA Authoring Practices Guide. */}
+          <div
+            role="tablist"
+            aria-label="Authentication method"
+            className="bg-column-bg rounded-[10px] p-1 flex mb-6"
+          >
+            {TABS.map(({ key, label }, index) => (
               <button
                 key={key}
-                onClick={() => {
-                  setTab(key);
-                  setError("");
-                  setMessage("");
+                ref={(el) => {
+                  tabRefs.current[index] = el;
                 }}
-                className={`flex-1 py-2 px-6 rounded-[8px] text-sm font-medium leading-5 tracking-[-0.15px] transition-all ${
+                role="tab"
+                aria-selected={tab === key}
+                aria-controls="auth-panel"
+                id={`auth-tab-${key}`}
+                tabIndex={tab === key ? 0 : -1}
+                onClick={() => selectTab(key)}
+                onKeyDown={(e) => handleTabKeyDown(e, index)}
+                className={`flex-1 py-2 px-6 rounded-[8px] text-sm font-medium leading-5 tracking-[-0.15px] transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
                   tab === key
                     ? "bg-white shadow-sm text-text"
                     : "text-muted hover:text-text"
@@ -126,8 +151,14 @@ export default function LoginPage() {
             ))}
           </div>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4 pb-8">
+          {/* WCAG 4.1.2: role="tabpanel" links the form to its controlling tab */}
+          <form
+            id="auth-panel"
+            role="tabpanel"
+            aria-labelledby={`auth-tab-${tab}`}
+            onSubmit={handleSubmit}
+            className="flex flex-col gap-4 pb-8"
+          >
             <div className="flex flex-col gap-2">
               <label
                 htmlFor={emailId}
@@ -143,7 +174,12 @@ export default function LoginPage() {
                 placeholder="you@example.com"
                 required
                 aria-required="true"
-                aria-invalid={!!error}
+                // WCAG 1.3.1: aria-invalid flags the field as erroneous;
+                // aria-describedby links the visible error message to this input
+                aria-invalid={!!error || undefined}
+                aria-describedby={
+                  error ? errorId : message ? messageId : undefined
+                }
                 className="border border-[rgba(0,0,0,0.1)] rounded-[10px] px-3 py-[10px] text-base text-text placeholder:text-muted outline-none focus:border-primary focus:bg-input-focus transition-colors"
               />
             </div>
@@ -164,19 +200,28 @@ export default function LoginPage() {
                   placeholder="••••••••"
                   required
                   aria-required="true"
-                  aria-invalid={!!error}
+                  aria-invalid={!!error || undefined}
+                  aria-describedby={error ? errorId : undefined}
                   className="border border-[rgba(0,0,0,0.1)] rounded-[10px] px-3 py-[10px] text-base text-text placeholder:text-muted outline-none focus:border-primary focus:bg-input-focus transition-colors"
                 />
               </div>
             )}
 
             {error && (
-              <p role="alert" className="text-delete text-sm leading-5">
+              <p
+                id={errorId}
+                role="alert"
+                className="text-delete text-sm leading-5"
+              >
                 {error}
               </p>
             )}
             {message && (
-              <p role="status" className="text-primary text-sm leading-5">
+              <p
+                id={messageId}
+                role="status"
+                className="text-primary text-sm leading-5"
+              >
                 {message}
               </p>
             )}
@@ -184,7 +229,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isPending}
-              className="bg-primary text-white text-base font-medium leading-6 tracking-[-0.31px] rounded-[10px] py-[10px] w-full hover:bg-primary-hover transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
+              className="bg-primary text-white text-base font-medium leading-6 tracking-[-0.31px] rounded-[10px] py-[10px] w-full hover:bg-primary-hover transition-colors disabled:opacity-60 flex items-center justify-center gap-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
             >
               {isPending && <Spinner />}
               {isPending
@@ -199,5 +244,33 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+function Spinner() {
+  return (
+    <svg
+      className="animate-spin"
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      fill="none"
+      aria-hidden="true"
+    >
+      <circle
+        cx="8"
+        cy="8"
+        r="6"
+        stroke="currentColor"
+        strokeOpacity="0.3"
+        strokeWidth="2"
+      />
+      <path
+        d="M8 2a6 6 0 0 1 6 6"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+    </svg>
   );
 }

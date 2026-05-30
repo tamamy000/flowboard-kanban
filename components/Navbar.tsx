@@ -28,15 +28,20 @@ export default function Navbar({
 
   if (variant === "secondary") {
     return (
-      <div className="border-b border-[rgba(0,0,0,0.1)] bg-white px-8 py-4">
+      <nav
+        aria-label="Board navigation"
+        className="border-b border-[rgba(0,0,0,0.1)] bg-white px-8 py-4"
+      >
         <div className="flex items-center gap-3">
           <Link
             href="/boards"
-            className="text-muted text-base font-medium hover:text-text transition-colors"
+            className="text-muted text-base font-medium hover:text-text transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary rounded"
           >
             Boards
           </Link>
-          <span className="text-muted text-base">/</span>
+          <span className="text-muted text-base" aria-hidden="true">
+            /
+          </span>
           <span className="text-text text-2xl font-medium leading-9">
             {boardName}
           </span>
@@ -46,12 +51,15 @@ export default function Navbar({
             </span>
           )}
         </div>
-      </div>
+      </nav>
     );
   }
 
   return (
-    <div className="bg-white border-b border-[rgba(0,0,0,0.1)] h-[65px] flex items-center justify-between px-6 shrink-0">
+    <nav
+      aria-label="Main navigation"
+      className="bg-white border-b border-[rgba(0,0,0,0.1)] h-[65px] flex items-center justify-between px-6 shrink-0"
+    >
       <div className="flex items-center gap-6">
         <div className="flex items-center gap-2">
           <Logo size={32} />
@@ -59,24 +67,25 @@ export default function Navbar({
         </div>
         <Link
           href="/boards"
-          className="text-text text-base hover:text-primary transition-colors"
+          className="text-text text-base hover:text-primary transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary rounded"
         >
           Boards
         </Link>
       </div>
       <div className="flex items-center gap-2">
-        <div className="bg-avatar w-6 h-6 rounded-full flex items-center justify-center">
-          <span className="text-white text-xs font-medium">
-            {userInitial}
-          </span>
+        <div
+          aria-hidden="true"
+          className="bg-avatar w-6 h-6 rounded-full flex items-center justify-center"
+        >
+          <span className="text-white text-xs font-medium">{userInitial}</span>
         </div>
         <button
           onClick={handleSignOut}
-          className="text-text text-base font-medium hover:text-muted transition-colors"
+          className="text-text text-base font-medium hover:text-muted transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary rounded"
         >
           Sign out
         </button>
       </div>
-    </div>
+    </nav>
   );
 }

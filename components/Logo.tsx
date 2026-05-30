@@ -1,6 +1,7 @@
 export default function Logo({ size = 32 }: { size?: number }) {
   return (
     <div
+      aria-hidden="true"
       className="bg-primary flex items-center justify-center rounded-lg shrink-0"
       style={{ width: size, height: size }}
     >

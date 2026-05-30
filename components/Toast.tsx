@@ -32,10 +32,20 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   return (
     <ToastContext.Provider value={{ showToast }}>
       {children}
-      <div className="fixed bottom-5 right-5 flex flex-col gap-2 z-[100] pointer-events-none">
+      {/*
+        WCAG 4.1.3: Status Messages must be programmatically determinable.
+        aria-live="polite" announces success toasts without interrupting the user.
+        role="alert" on individual error toasts escalates to assertive announcement.
+      */}
+      <div
+        aria-live="polite"
+        aria-atomic="false"
+        className="fixed bottom-5 right-5 flex flex-col gap-2 z-[100] pointer-events-none"
+      >
         {toasts.map((toast) => (
           <div
             key={toast.id}
+            role={toast.type === "error" ? "alert" : "status"}
             className={`toast-enter px-4 py-3 rounded-[10px] text-sm font-medium leading-5 shadow-lg ${
               toast.type === "error"
                 ? "bg-delete text-white"

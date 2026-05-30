@@ -31,8 +31,9 @@ export default function DraggableCard({
   columnId,
   onClick,
 }: DraggableCardProps) {
+  // Include title in drag data so DndContext announcements can reference it
   const { attributes, listeners, setNodeRef, transform, isDragging } =
-    useDraggable({ id, data: { columnId } });
+    useDraggable({ id, data: { columnId, title } });
 
   const hasMeta = priority || due_date;
 
@@ -47,7 +48,15 @@ export default function DraggableCard({
       {...listeners}
       {...attributes}
       onClick={onClick}
-      className={`bg-white border border-[rgba(0,0,0,0.1)] rounded-[10px] px-3 pt-3 pb-3 cursor-grab active:cursor-grabbing hover:shadow-sm transition-shadow touch-none ${
+      // WCAG 2.1.1: Enter key opens the edit modal so keyboard users can edit
+      // without activating the drag (Space is reserved for drag pickup by KeyboardSensor)
+      onKeyDown={(e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          onClick();
+        }
+      }}
+      className={`bg-white border border-[rgba(0,0,0,0.1)] rounded-[10px] px-3 pt-3 pb-3 cursor-grab active:cursor-grabbing hover:shadow-sm transition-shadow touch-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
         isDragging ? "opacity-40 shadow-lg" : ""
       }`}
     >
